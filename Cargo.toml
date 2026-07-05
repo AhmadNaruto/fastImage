@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "resizer",
+    "jni_binding",
 ]
 
 

@@ -1,0 +1,54 @@
+package com.example.fastimageresizer
+
+import android.graphics.Bitmap
+
+object FastImageResizer {
+    
+    init {
+        // Loads the compiled .so library (libfast_image_resize_jni.so)
+        System.loadLibrary("fast_image_resize_jni")
+    }
+
+    enum class Algorithm(val value: Int) {
+        NEAREST(0),
+        BOX(1),
+        BILINEAR(2),
+        BICUBIC(3),
+        LANCZOS3(4)
+    }
+
+    /**
+     * Resizes a raw RGBA byte array.
+     * Returns a new byte array containing the resized RGBA image.
+     */
+    external fun resizeRgba(
+        src: ByteArray,
+        srcWidth: Int,
+        srcHeight: Int,
+        dstWidth: Int,
+        dstHeight: Int,
+        algorithm: Int
+    ): ByteArray?
+
+    /**
+     * Resizes an Android Bitmap into another existing Bitmap in-place.
+     * Both bitmaps MUST use Config.ARGB_8888.
+     * Returns true if the operation succeeded, false otherwise.
+     */
+    external fun resizeBitmap(
+        srcBitmap: Bitmap,
+        dstBitmap: Bitmap,
+        algorithm: Int
+    ): Boolean
+
+    // Kotlin friendly helper methods
+    fun resize(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Algorithm): ByteArray? {
+        return resizeRgba(src, srcW, srcH, dstW, dstH, alg.value)
+    }
+
+    fun resize(src: Bitmap, dst: Bitmap, alg: Algorithm): Boolean {
+        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
+        require(dst.config == Bitmap.Config.ARGB_8888) { "Destination bitmap must be ARGB_8888" }
+        return resizeBitmap(src, dst, alg.value)
+    }
+}
