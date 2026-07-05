@@ -1,4 +1,4 @@
-package com.example.fastimageresizer
+package io.github.fastimage
 
 import android.graphics.Bitmap
 

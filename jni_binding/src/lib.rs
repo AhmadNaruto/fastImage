@@ -22,7 +22,7 @@ fn get_resize_alg(alg: jint) -> ResizeAlg {
 /// 1. ByteArray Resize: Resizes raw RGBA bytes.
 /// Kotlin: external fun resizeRgba(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Int): ByteArray
 #[no_mangle]
-pub unsafe extern "system" fn Java_com_example_fastimageresizer_FastImageResizer_resizeRgba(
+pub unsafe extern "system" fn Java_io_github_fastimage_FastImageResizer_resizeRgba(
     env: JNIEnv,
     _class: JClass,
     src_array: JByteArray,
@@ -90,7 +90,7 @@ pub unsafe extern "system" fn Java_com_example_fastimageresizer_FastImageResizer
 /// Kotlin: external fun resizeBitmap(src: Bitmap, dst: Bitmap, alg: Int): Boolean
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub unsafe extern "system" fn Java_com_example_fastimageresizer_FastImageResizer_resizeBitmap(
+pub unsafe extern "system" fn Java_io_github_fastimage_FastImageResizer_resizeBitmap(
     env: JNIEnv,
     _class: JClass,
     src_bitmap: JObject,
@@ -186,7 +186,7 @@ pub unsafe extern "system" fn Java_com_example_fastimageresizer_FastImageResizer
 /// Fallback for non-android targets (to compile/test on host)
 #[cfg(not(target_os = "android"))]
 #[no_mangle]
-pub unsafe extern "system" fn Java_com_example_fastimageresizer_FastImageResizer_resizeBitmap(
+pub unsafe extern "system" fn Java_io_github_fastimage_FastImageResizer_resizeBitmap(
     _env: JNIEnv,
     _class: JClass,
     _src_bitmap: JObject,
