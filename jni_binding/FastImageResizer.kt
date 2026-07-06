@@ -18,19 +18,6 @@ object FastImageResizer {
     }
 
     /**
-     * Resizes a raw RGBA byte array.
-     * Returns a new byte array containing the resized RGBA image.
-     */
-    external fun resizeRgba(
-        src: ByteArray,
-        srcWidth: Int,
-        srcHeight: Int,
-        dstWidth: Int,
-        dstHeight: Int,
-        algorithm: Int
-    ): ByteArray?
-
-    /**
      * Resizes an Android Bitmap into another existing Bitmap in-place.
      * Both bitmaps MUST use Config.ARGB_8888.
      * Returns true if the operation succeeded, false otherwise.
@@ -50,27 +37,6 @@ object FastImageResizer {
         srcBitmap: Bitmap,
         numParts: Int
     ): Array<Bitmap>?
-
-    /**
-     * Splits an Android Bitmap into multiple Bitmaps by width (zero-copy).
-     * The source bitmap MUST use Config.ARGB_8888.
-     * Returns an array of Bitmaps, or null if the operation failed.
-     */
-    external fun splitBitmapByWidth(
-        srcBitmap: Bitmap,
-        numParts: Int
-    ): Array<Bitmap>?
-
-    // Kotlin friendly helper methods
-    fun resize(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Algorithm = Algorithm.LANCZOS3): ByteArray? {
-        return resizeRgba(src, srcW, srcH, dstW, dstH, alg.value)
-    }
-
-    fun resize(src: Bitmap, dst: Bitmap, alg: Algorithm = Algorithm.LANCZOS3): Boolean {
-        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
-        require(dst.config == Bitmap.Config.ARGB_8888) { "Destination bitmap must be ARGB_8888" }
-        return resizeBitmap(src, dst, alg.value)
-    }
 
     /**
      * Resizes an Android Bitmap to a target width, automatically maintaining the original aspect ratio.
@@ -95,18 +61,13 @@ object FastImageResizer {
         }
     }
 
-    @Deprecated("Use splitByHeight instead", ReplaceWith("splitByHeight(src, numParts)"))
-    fun split(src: Bitmap, numParts: Int): Array<Bitmap>? {
-        return splitByHeight(src, numParts)
-    }
-
+    /**
+     * Splits an Android Bitmap into multiple Bitmaps by height (zero-copy).
+     * The source bitmap MUST use Config.ARGB_8888.
+     * Returns an array of Bitmaps, or null if the operation failed.
+     */
     fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>? {
         require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
         return splitBitmap(src, numParts)
-    }
-
-    fun splitByWidth(src: Bitmap, numParts: Int): Array<Bitmap>? {
-        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
-        return splitBitmapByWidth(src, numParts)
     }
 }
