@@ -40,19 +40,35 @@ object FastImageResizer {
 
     /**
      * Resizes an Android Bitmap to a target width, automatically maintaining the original aspect ratio.
-     * The source bitmap MUST use Config.ARGB_8888.
+     * Automatically converts the source Bitmap to ARGB_8888 if it's in another format, and recycles
+     * the temporary bitmap afterwards to avoid memory leaks.
      * Returns the resized Bitmap, or null if the operation failed.
      */
     fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm = Algorithm.LANCZOS3): Bitmap? {
-        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
         if (targetWidth <= 0) return null
         
+        // Auto-convert to ARGB_8888 if config is different
+        val argbSrc = if (src.config != Bitmap.Config.ARGB_8888) {
+            src.copy(Bitmap.Config.ARGB_8888, false) ?: return null
+        } else {
+            src
+        }
+
         // Calculate height preserving the aspect ratio
-        val targetHeight = (src.height.toLong() * targetWidth / src.width).toInt()
-        if (targetHeight <= 0) return null
+        val targetHeight = (argbSrc.height.toLong() * targetWidth / argbSrc.width).toInt()
+        if (targetHeight <= 0) {
+            if (argbSrc !== src) argbSrc.recycle()
+            return null
+        }
 
         val dst = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-        val success = resizeBitmap(src, dst, alg.value)
+        val success = resizeBitmap(argbSrc, dst, alg.value)
+        
+        // Clean up temporary converted bitmap
+        if (argbSrc !== src) {
+            argbSrc.recycle()
+        }
+
         return if (success) {
             dst
         } else {
@@ -63,11 +79,27 @@ object FastImageResizer {
 
     /**
      * Splits an Android Bitmap into multiple Bitmaps by height (zero-copy).
-     * The source bitmap MUST use Config.ARGB_8888.
+     * Automatically converts the source Bitmap to ARGB_8888 if it's in another format, and recycles
+     * the temporary bitmap afterwards to avoid memory leaks.
      * Returns an array of Bitmaps, or null if the operation failed.
      */
     fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>? {
-        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
-        return splitBitmap(src, numParts)
+        if (numParts <= 0) return null
+
+        // Auto-convert to ARGB_8888 if config is different
+        val argbSrc = if (src.config != Bitmap.Config.ARGB_8888) {
+            src.copy(Bitmap.Config.ARGB_8888, false) ?: return null
+        } else {
+            src
+        }
+
+        val result = splitBitmap(argbSrc, numParts)
+
+        // Clean up temporary converted bitmap
+        if (argbSrc !== src) {
+            argbSrc.recycle()
+        }
+
+        return result
     }
 }
