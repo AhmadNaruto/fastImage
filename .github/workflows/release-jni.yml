@@ -1,6 +1,9 @@
 name: Build and Release JNI Libraries
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
