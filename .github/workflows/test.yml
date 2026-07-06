@@ -21,4 +21,4 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Run example test
-        run: cargo run --example host_test -p fast_image_resize_jni
+        run: cargo run --example host_test -p imagefast

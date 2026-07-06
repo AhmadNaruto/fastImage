@@ -33,25 +33,25 @@ jobs:
       # Compiles all targets and outputs them to ./jniLibs/ folder structure
       - name: Build JNI Libraries
         run: |
-          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86 -t x86_64 -o ./jniLibs build --release -p fast_image_resize_jni
+          cargo ndk -t arm64-v8a -t armeabi-v7a -t x86 -t x86_64 -o ./jniLibs build --release -p imagefast
 
       # Copy and rename .so files flatly with architecture suffixes
       - name: Package Libraries
         run: |
-          cp jniLibs/arm64-v8a/libfast_image_resize_jni.so ./libfast_image_resize_jni_arm64-v8a.so
-          cp jniLibs/armeabi-v7a/libfast_image_resize_jni.so ./libfast_image_resize_jni_armeabi-v7a.so
-          cp jniLibs/x86/libfast_image_resize_jni.so ./libfast_image_resize_jni_x86.so
-          cp jniLibs/x86_64/libfast_image_resize_jni.so ./libfast_image_resize_jni_x86_64.so
+          cp jniLibs/arm64-v8a/libimagefast.so ./libimagefast_arm64-v8a.so
+          cp jniLibs/armeabi-v7a/libimagefast.so ./libimagefast_armeabi-v7a.so
+          cp jniLibs/x86/libimagefast.so ./libimagefast_x86.so
+          cp jniLibs/x86_64/libimagefast.so ./libimagefast_x86_64.so
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: jni-libraries
           path: |
-            libfast_image_resize_jni_arm64-v8a.so
-            libfast_image_resize_jni_armeabi-v7a.so
-            libfast_image_resize_jni_x86.so
-            libfast_image_resize_jni_x86_64.so
+            libimagefast_arm64-v8a.so
+            libimagefast_armeabi-v7a.so
+            libimagefast_x86.so
+            libimagefast_x86_64.so
 
   create-release:
     name: Create GitHub Release
@@ -71,10 +71,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            libfast_image_resize_jni_arm64-v8a.so
-            libfast_image_resize_jni_armeabi-v7a.so
-            libfast_image_resize_jni_x86.so
-            libfast_image_resize_jni_x86_64.so
+            libimagefast_arm64-v8a.so
+            libimagefast_armeabi-v7a.so
+            libimagefast_x86.so
+            libimagefast_x86_64.so
           draft: false
           prerelease: false
           generate_release_notes: true

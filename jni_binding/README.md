@@ -135,7 +135,7 @@ Letakkan file pustaka `.so` yang telah dikompilasi ke direktori jniLibs proyek A
 ```text
 [YourAndroidProject]/app/src/main/jniLibs/
   └── arm64-v8a/
-        └── libfast_image_resize_jni.so
+        └── libimagefast.so
 ```
 
 ### Langkah 2: Salin File Kotlin

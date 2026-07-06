@@ -684,18 +684,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fast_image_resize_jni"
-version = "0.1.0"
-dependencies = [
- "fast_image_resize",
- "jni",
- "jpeg-decoder",
- "jpeg-encoder",
- "ndk-sys",
- "zenwebp",
-]
-
-[[package]]
 name = "fdeflate"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -910,6 +898,18 @@ checksum = "525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3"
 dependencies = [
  "byteorder-lite",
  "quick-error",
+]
+
+[[package]]
+name = "imagefast"
+version = "0.1.0"
+dependencies = [
+ "fast_image_resize",
+ "jni",
+ "jpeg-decoder",
+ "jpeg-encoder",
+ "ndk-sys",
+ "zenwebp",
 ]
 
 [[package]]

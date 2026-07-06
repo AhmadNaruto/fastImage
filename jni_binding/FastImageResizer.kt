@@ -5,8 +5,8 @@ import android.graphics.Bitmap
 object FastImageResizer {
     
     init {
-        // Loads the compiled .so library (libfast_image_resize_jni.so)
-        System.loadLibrary("fast_image_resize_jni")
+        // Loads the compiled .so library (libimagefast.so)
+        System.loadLibrary("imagefast")
     }
 
     enum class Algorithm(val value: Int) {
