@@ -10,6 +10,8 @@ crate-type = ["cdylib"]
 [dependencies]
 fast_image_resize = { path = "..", features = ["only_u8x4"] }
 jni = { version = "0.21.1", default-features = false }
+zenwebp = { version = "0.4.0", default-features = false, features = ["std"] }
+jpeg-encoder = "0.7.0"
 
 [target.'cfg(target_os = "android")'.dependencies]
 ndk-sys = "0.6.0"

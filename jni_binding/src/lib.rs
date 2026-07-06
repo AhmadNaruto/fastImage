@@ -1,7 +1,7 @@
 use std::slice;
 use jni::JNIEnv;
 use jni::objects::{JClass, JObject};
-use jni::sys::{jint, jboolean, JNI_TRUE, JNI_FALSE};
+use jni::sys::{jbyteArray, jint, jboolean, JNI_TRUE, JNI_FALSE};
 use fast_image_resize::{Resizer, ResizeAlg, PixelType, FilterType, ImageView};
 use fast_image_resize::images::{Image, ImageRef};
 
@@ -257,5 +257,116 @@ pub unsafe extern "system" fn Java_io_github_fastimage_FastImageResizer_splitBit
     _src_bitmap: JObject,
     _num_parts: jint,
 ) -> jni::sys::jobjectArray {
+    std::ptr::null_mut()
+}
+
+/// 3. Compress Bitmap: Compresses a Bitmap directly to WebP or JPEG bytes (Zero-copy).
+/// Kotlin: external fun compressBitmap(srcBitmap: Bitmap, format: Int, quality: Int): ByteArray?
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub unsafe extern "system" fn Java_io_github_fastimage_FastImageResizer_compressBitmap(
+    env: JNIEnv,
+    _class: JClass,
+    src_bitmap: JObject,
+    format: jint,
+    quality: jint,
+) -> jbyteArray {
+    let raw_env = env.get_native_interface();
+    let raw_src = src_bitmap.as_raw();
+
+    // Get Bitmap Info
+    let mut src_info = ndk_sys::AndroidBitmapInfo {
+        width: 0,
+        height: 0,
+        stride: 0,
+        format: 0,
+        flags: 0,
+    };
+    if ndk_sys::AndroidBitmap_getInfo(raw_env, raw_src, &mut src_info) < 0 {
+        return std::ptr::null_mut();
+    }
+
+    if src_info.format != ANDROID_BITMAP_FORMAT_RGBA_8888 {
+        return std::ptr::null_mut();
+    }
+
+    // Lock Pixels
+    let mut src_pixels: *mut std::ffi::c_void = std::ptr::null_mut();
+    if ndk_sys::AndroidBitmap_lockPixels(raw_env, raw_src, &mut src_pixels) < 0 {
+        return std::ptr::null_mut();
+    }
+
+    let src_slice = slice::from_raw_parts(
+        src_pixels as *const u8,
+        (src_info.stride * src_info.height) as usize,
+    );
+
+    // Call inner compression logic
+    let res = (|| {
+        let width = src_info.width;
+        let height = src_info.height;
+
+        let compressed_bytes = if format == 0 {
+            // WebP Compression
+            use zenwebp::{EncodeRequest, LossyConfig, PixelLayout};
+            let mut config = LossyConfig::new();
+            config.quality = quality as f32;
+            config.method = 4; // Standard method
+
+            let req = EncodeRequest::lossy(&config, src_slice, PixelLayout::Rgba8, width, height);
+            req.encode().map_err(|_| "WebP encoding failed")?
+        } else {
+            // JPEG Compression
+            use jpeg_encoder::{Encoder, ColorType};
+            let mut rgb_pixels = Vec::with_capacity((width * height * 3) as usize);
+            for chunk in src_slice.chunks_exact(4) {
+                rgb_pixels.push(chunk[0]); // R
+                rgb_pixels.push(chunk[1]); // G
+                rgb_pixels.push(chunk[2]); // B
+            }
+
+            let mut buffer = Vec::new();
+            {
+                let encoder = Encoder::new(&mut buffer, quality as u8);
+                encoder.encode(&rgb_pixels, width as u16, height as u16, ColorType::Rgb)
+                    .map_err(|_| "JPEG encoding failed")?;
+            }
+            buffer
+        };
+
+        // Convert result vector back to jbyteArray
+        let result_array = env.new_byte_array(compressed_bytes.len() as jint)
+            .map_err(|_| "Failed to create byte array")?;
+
+        let res_slice = slice::from_raw_parts(
+            compressed_bytes.as_ptr() as *const i8,
+            compressed_bytes.len(),
+        );
+
+        env.set_byte_array_region(&result_array, 0, res_slice)
+            .map_err(|_| "Failed to set byte array region")?;
+
+        Ok::<jni::objects::JByteArray, &'static str>(result_array)
+    })();
+
+    // Always unlock src
+    ndk_sys::AndroidBitmap_unlockPixels(raw_env, raw_src);
+
+    match res {
+        Ok(arr) => arr.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// Fallback for non-android targets (to compile/test on host)
+#[cfg(not(target_os = "android"))]
+#[no_mangle]
+pub unsafe extern "system" fn Java_io_github_fastimage_FastImageResizer_compressBitmap(
+    _env: JNIEnv,
+    _class: JClass,
+    _src_bitmap: JObject,
+    _format: jint,
+    _quality: jint,
+) -> jbyteArray {
     std::ptr::null_mut()
 }

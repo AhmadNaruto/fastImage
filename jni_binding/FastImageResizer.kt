@@ -17,6 +17,11 @@ object FastImageResizer {
         LANCZOS3(4)
     }
 
+    enum class CompressFormat(val value: Int) {
+        WEBP(0),
+        JPEG(1)
+    }
+
     /**
      * Resizes an Android Bitmap into another existing Bitmap in-place.
      * Both bitmaps MUST use Config.ARGB_8888.
@@ -27,6 +32,17 @@ object FastImageResizer {
         dstBitmap: Bitmap,
         algorithm: Int
     ): Boolean
+
+    /**
+     * Compresses an Android Bitmap directly into a WebP or JPEG byte array (zero-copy).
+     * The source bitmap MUST use Config.ARGB_8888.
+     * Returns the compressed byte array, or null if the operation failed.
+     */
+    external fun compressBitmap(
+        srcBitmap: Bitmap,
+        format: Int,
+        quality: Int
+    ): ByteArray?
 
     /**
      * Splits an Android Bitmap into multiple Bitmaps by height (zero-copy).
@@ -94,6 +110,33 @@ object FastImageResizer {
         }
 
         val result = splitBitmap(argbSrc, numParts)
+
+        // Clean up temporary converted bitmap
+        if (argbSrc !== src) {
+            argbSrc.recycle()
+        }
+
+        return result
+    }
+
+    /**
+     * Compresses an Android Bitmap directly into a WebP or JPEG byte array.
+     * Automatically converts the source Bitmap to ARGB_8888 if it's in another format, and recycles
+     * the temporary bitmap afterwards to avoid memory leaks.
+     * Quality must be between 1 and 100.
+     * Returns the compressed byte array, or null if the operation failed.
+     */
+    fun compress(src: Bitmap, format: CompressFormat, quality: Int): ByteArray? {
+        if (quality < 1 || quality > 100) return null
+
+        // Auto-convert to ARGB_8888 if config is different
+        val argbSrc = if (src.config != Bitmap.Config.ARGB_8888) {
+            src.copy(Bitmap.Config.ARGB_8888, false) ?: return null
+        } else {
+            src
+        }
+
+        val result = compressBitmap(argbSrc, format.value, quality)
 
         // Clean up temporary converted bitmap
         if (argbSrc !== src) {
