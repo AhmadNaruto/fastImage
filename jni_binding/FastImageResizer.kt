@@ -41,6 +41,16 @@ object FastImageResizer {
         algorithm: Int
     ): Boolean
 
+    /**
+     * Splits an Android Bitmap into multiple Bitmaps by height (zero-copy).
+     * The source bitmap MUST use Config.ARGB_8888.
+     * Returns an array of Bitmaps, or null if the operation failed.
+     */
+    external fun splitBitmap(
+        srcBitmap: Bitmap,
+        numParts: Int
+    ): Array<Bitmap>?
+
     // Kotlin friendly helper methods
     fun resize(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Algorithm): ByteArray? {
         return resizeRgba(src, srcW, srcH, dstW, dstH, alg.value)
@@ -50,5 +60,10 @@ object FastImageResizer {
         require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
         require(dst.config == Bitmap.Config.ARGB_8888) { "Destination bitmap must be ARGB_8888" }
         return resizeBitmap(src, dst, alg.value)
+    }
+
+    fun split(src: Bitmap, numParts: Int): Array<Bitmap>? {
+        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
+        return splitBitmap(src, numParts)
     }
 }
