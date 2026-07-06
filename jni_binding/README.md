@@ -48,12 +48,16 @@ external fun resizeBitmap(
 
 ---
 
-#### 2. `split` (Direct Zero-Copy Height Split)
-Membagi sebuah `Bitmap` vertikal yang panjang (seperti strip manhwa/webtoon) menjadi beberapa objek `Bitmap` yang lebih kecil berdasarkan tinggi gambar secara rata.
+#### 2. `splitByHeight` & `splitByWidth` (Direct Zero-Copy Splitting)
 
-```kotlin
-fun split(src: Bitmap, numParts: Int): Array<Bitmap>?
-```
+* **`splitByHeight`**: Membagi sebuah `Bitmap` vertikal yang panjang (seperti strip manhwa/webtoon) secara horizontal (berdasarkan tinggi) menjadi beberapa objek `Bitmap` yang lebih kecil secara rata.
+  ```kotlin
+  fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>?
+  ```
+* **`splitByWidth`**: Membagi sebuah `Bitmap` lanskap yang lebar (seperti halaman ganda manga / double-spread) secara vertikal (berdasarkan lebar) menjadi beberapa objek `Bitmap` yang lebih kecil secara rata (misalnya menjadi halaman kiri dan kanan).
+  ```kotlin
+  fun splitByWidth(src: Bitmap, numParts: Int): Array<Bitmap>?
+  ```
 * **Parameters:**
   * `src`: Objek `Bitmap` asal yang ingin dipotong (harus menggunakan `Bitmap.Config.ARGB_8888`).
   * `numParts`: Jumlah potongan gambar yang diinginkan (harus > 0).
@@ -79,23 +83,31 @@ external fun resizeRgba(
 
 ## 3. Contoh Penggunaan (Kotlin)
 
-### Contoh A: Memotong Strip Manhwa Vertikal (`split`)
-Membagi strip webtoon vertikal yang panjang menjadi 4 bagian secara rata agar tidak membebani batas render OpenGL di Android (*texture size limits*).
+### Contoh A: Memotong Halaman / Strip Manga & Manhwa
+Berikut adalah cara memotong strip manhwa vertikal menjadi 4 bagian secara rata, serta membagi halaman ganda (double-page spread) manga menjadi 2 halaman tunggal.
 
 ```kotlin
 import android.graphics.Bitmap
 import io.github.fastimage.FastImageResizer
 
-fun processAndSliceManhwa(manhwaStrip: Bitmap): Array<Bitmap>? {
-    // Pastikan format warna ARGB_8888
+// Kasus 1: Membagi strip manhwa vertikal panjang menjadi 4 bagian secara rata
+fun sliceManhwaStrip(manhwaStrip: Bitmap): Array<Bitmap>? {
     val srcBitmap = if (manhwaStrip.config != Bitmap.Config.ARGB_8888) {
         manhwaStrip.copy(Bitmap.Config.ARGB_8888, false)
     } else {
         manhwaStrip
     }
+    return FastImageResizer.splitByHeight(srcBitmap, numParts = 4)
+}
 
-    // Memotong gambar menjadi 4 bagian secara vertikal secara native & cepat
-    return FastImageResizer.split(srcBitmap, numParts = 4)
+// Kasus 2: Membagi halaman ganda (double-spread) manga menjadi halaman kiri dan kanan
+fun splitMangaDoublePage(doublePage: Bitmap): Array<Bitmap>? {
+    val srcBitmap = if (doublePage.config != Bitmap.Config.ARGB_8888) {
+        doublePage.copy(Bitmap.Config.ARGB_8888, false)
+    } else {
+        doublePage
+    }
+    return FastImageResizer.splitByWidth(srcBitmap, numParts = 2)
 }
 ```
 
