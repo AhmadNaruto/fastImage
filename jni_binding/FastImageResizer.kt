@@ -62,11 +62,11 @@ object FastImageResizer {
     ): Array<Bitmap>?
 
     // Kotlin friendly helper methods
-    fun resize(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Algorithm): ByteArray? {
+    fun resize(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Algorithm = Algorithm.LANCZOS3): ByteArray? {
         return resizeRgba(src, srcW, srcH, dstW, dstH, alg.value)
     }
 
-    fun resize(src: Bitmap, dst: Bitmap, alg: Algorithm): Boolean {
+    fun resize(src: Bitmap, dst: Bitmap, alg: Algorithm = Algorithm.LANCZOS3): Boolean {
         require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
         require(dst.config == Bitmap.Config.ARGB_8888) { "Destination bitmap must be ARGB_8888" }
         return resizeBitmap(src, dst, alg.value)
@@ -77,7 +77,7 @@ object FastImageResizer {
      * The source bitmap MUST use Config.ARGB_8888.
      * Returns the resized Bitmap, or null if the operation failed.
      */
-    fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm): Bitmap? {
+    fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm = Algorithm.LANCZOS3): Bitmap? {
         require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
         if (targetWidth <= 0) return null
         
