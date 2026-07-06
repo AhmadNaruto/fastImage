@@ -117,12 +117,32 @@ Letakkan file pustaka `.so` yang telah dikompilasi ke direktori jniLibs proyek A
 Buat berkas dengan nama `FastImageResizer.kt` di dalam proyek Android Anda dengan struktur path package berikut:
 `app/src/main/java/io/github/fastimage/FastImageResizer.kt`
 
-### Langkah 3: Konfigurasi ProGuard / R8
-Agar optimizer Android tidak menghapus atau mengubah nama class JNI Kotlin saat membuild versi *Release*, tambahkan aturan berikut ke berkas `proguard-rules.pro` aplikasi Anda:
+### Langkah 3: Konfigurasi ProGuard / R8 (Sangat Penting)
+Saat Anda membuild aplikasi Android dalam mode **Release**, R8/ProGuard akan melakukan optimalisasi, penciutan kode (*shrinking*), dan pengaburan nama (*obfuscation*). 
+
+Karena kode native Rust JNI memanggil method Java/Android (`Bitmap.createBitmap`) dan mereferensikan kelas secara dinamis dari memori C++, Anda **wajib** mendaftarkan aturan ProGuard berikut agar aplikasi tidak mengalami crash (`NoSuchMethodError` atau `ClassNotFoundException`) di versi rilis:
+
+Tambahkan baris berikut di berkas `proguard-rules.pro` proyek Android Anda:
 
 ```proguard
-# Mencegah obfuscation pada kelas pembungkus JNI
+# 1. Menjaga kelas FastImageResizer beserta seluruh metode native-nya
 -keep class io.github.fastimage.FastImageResizer {
     native <methods>;
+    *;
 }
+
+# 2. Menjaga kelas dan field Bitmap.Config (ARGB_8888) yang dipanggil oleh Rust JNI
+-keep class android.graphics.Bitmap$Config {
+    public static final android.graphics.Bitmap$Config ARGB_8888;
+}
+
+# 3. Menjaga tanda tangan metode statis Bitmap.createBitmap yang dipanggil oleh Rust JNI
+-keep class android.graphics.Bitmap {
+    public static android.graphics.Bitmap createBitmap(int, int, android.graphics.Bitmap$Config);
+}
+```
+
+#### Penjelasan Aturan:
+1. **Rule 1**: Menjamin kelas Kotlin/Java `FastImageResizer` tidak diganti namanya (obfuscated) dan fungsi `external` (native) tetap dapat diakses oleh linker JNI.
+2. **Rule 2 & 3**: Rust JNI menggunakan fungsi refleksi internal Android untuk membuat Bitmap baru secara native saat proses `splitByHeight`. Jika nama parameter/metode `createBitmap` di-obfuscate oleh ProGuard, Rust tidak akan bisa membuat Bitmap potongan baru di memori C++, yang akan menyebabkan aplikasi crash.
 ```
