@@ -35,16 +35,23 @@ jobs:
         run: |
           cargo ndk -t arm64-v8a -t armeabi-v7a -t x86 -t x86_64 -o ./jniLibs build --release -p fast_image_resize_jni
 
-      # Zips the jniLibs directory containing all .so architectures
+      # Copy and rename .so files flatly with architecture suffixes
       - name: Package Libraries
         run: |
-          zip -r fast_image_resize_jni_android.zip jniLibs
+          cp jniLibs/arm64-v8a/libfast_image_resize_jni.so ./libfast_image_resize_jni_arm64-v8a.so
+          cp jniLibs/armeabi-v7a/libfast_image_resize_jni.so ./libfast_image_resize_jni_armeabi-v7a.so
+          cp jniLibs/x86/libfast_image_resize_jni.so ./libfast_image_resize_jni_x86.so
+          cp jniLibs/x86_64/libfast_image_resize_jni.so ./libfast_image_resize_jni_x86_64.so
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: jni-libraries
-          path: fast_image_resize_jni_android.zip
+          path: |
+            libfast_image_resize_jni_arm64-v8a.so
+            libfast_image_resize_jni_armeabi-v7a.so
+            libfast_image_resize_jni_x86.so
+            libfast_image_resize_jni_x86_64.so
 
   create-release:
     name: Create GitHub Release
@@ -61,7 +68,11 @@ jobs:
       - name: Create GitHub Release and Upload Assets
         uses: softprops/action-gh-release@v2
         with:
-          files: fast_image_resize_jni_android.zip
+          files: |
+            libfast_image_resize_jni_arm64-v8a.so
+            libfast_image_resize_jni_armeabi-v7a.so
+            libfast_image_resize_jni_x86.so
+            libfast_image_resize_jni_x86_64.so
           draft: false
           prerelease: false
           generate_release_notes: true
