@@ -8,7 +8,7 @@ name = "fast_image_resize_jni"
 crate-type = ["cdylib"]
 
 [dependencies]
-fast_image_resize = { path = ".." }
+fast_image_resize = { path = "..", features = ["only_u8x4"] }
 jni = { version = "0.21.1", default-features = false }
 
 [target.'cfg(target_os = "android")'.dependencies]

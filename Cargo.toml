@@ -102,10 +102,10 @@ debug = false # when possible
 
 
 [profile.release]
-opt-level = 3
-incremental = true
-#lto = true
-#codegen-units = 1
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
 strip = true
 
 
