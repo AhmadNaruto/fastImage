@@ -47,7 +47,7 @@ fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>?
 Mengubah ukuran sebuah `Bitmap` berdasarkan lebar target yang ditentukan, secara otomatis menghitung tinggi untuk menjaga rasio aspek asli gambar.
 
 ```kotlin
-fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm): Bitmap?
+fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm = Algorithm.LANCZOS3): Bitmap?
 ```
 * **Parameters:**
   * `src`: Objek `Bitmap` asal (harus memiliki konfigurasi `Bitmap.Config.ARGB_8888`).
@@ -92,12 +92,8 @@ fun fitMangaPageToWidth(source: Bitmap, targetWidth: Int): Bitmap? {
         source
     }
 
-    // Resize menggunakan Lanczos3 agar teks komik tetap tajam & rasio aspek terjaga
-    return FastImageResizer.resizeByWidth(
-        src = srcBitmap,
-        targetWidth = targetWidth,
-        alg = FastImageResizer.Algorithm.LANCZOS3
-    )
+    // Resize secara otomatis menggunakan Lanczos3 & menjaga rasio aspek gambar tetap asli
+    return FastImageResizer.resizeByWidth(srcBitmap, targetWidth)
 }
 ```
 
