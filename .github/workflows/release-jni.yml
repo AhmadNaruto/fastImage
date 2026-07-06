@@ -58,6 +58,8 @@ jobs:
     needs: build-android
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
 
     steps:
       - name: Download Build Artifacts
