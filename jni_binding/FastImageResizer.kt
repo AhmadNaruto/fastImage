@@ -51,6 +51,16 @@ object FastImageResizer {
         numParts: Int
     ): Array<Bitmap>?
 
+    /**
+     * Splits an Android Bitmap into multiple Bitmaps by width (zero-copy).
+     * The source bitmap MUST use Config.ARGB_8888.
+     * Returns an array of Bitmaps, or null if the operation failed.
+     */
+    external fun splitBitmapByWidth(
+        srcBitmap: Bitmap,
+        numParts: Int
+    ): Array<Bitmap>?
+
     // Kotlin friendly helper methods
     fun resize(src: ByteArray, srcW: Int, srcH: Int, dstW: Int, dstH: Int, alg: Algorithm): ByteArray? {
         return resizeRgba(src, srcW, srcH, dstW, dstH, alg.value)
@@ -62,8 +72,41 @@ object FastImageResizer {
         return resizeBitmap(src, dst, alg.value)
     }
 
+    /**
+     * Resizes an Android Bitmap to a target width, automatically maintaining the original aspect ratio.
+     * The source bitmap MUST use Config.ARGB_8888.
+     * Returns the resized Bitmap, or null if the operation failed.
+     */
+    fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm): Bitmap? {
+        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
+        if (targetWidth <= 0) return null
+        
+        // Calculate height preserving the aspect ratio
+        val targetHeight = (src.height.toLong() * targetWidth / src.width).toInt()
+        if (targetHeight <= 0) return null
+
+        val dst = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+        val success = resizeBitmap(src, dst, alg.value)
+        return if (success) {
+            dst
+        } else {
+            dst.recycle()
+            null
+        }
+    }
+
+    @Deprecated("Use splitByHeight instead", ReplaceWith("splitByHeight(src, numParts)"))
     fun split(src: Bitmap, numParts: Int): Array<Bitmap>? {
+        return splitByHeight(src, numParts)
+    }
+
+    fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>? {
         require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
         return splitBitmap(src, numParts)
+    }
+
+    fun splitByWidth(src: Bitmap, numParts: Int): Array<Bitmap>? {
+        require(src.config == Bitmap.Config.ARGB_8888) { "Source bitmap must be ARGB_8888" }
+        return splitBitmapByWidth(src, numParts)
     }
 }

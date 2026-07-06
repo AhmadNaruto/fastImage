@@ -30,34 +30,12 @@ Menentukan algoritma interpolasi gambar yang digunakan untuk proses resizing.
 
 ### B. Metode API Utama
 
-#### 1. `resizeBitmap` (Direct Zero-Copy Resize)
-Melakukan operasi resize secara langsung di dalam buffer memori objek Android `Bitmap` tanpa penyalinan memori antara Kotlin/Java heap dan Rust heap.
+#### 1. `splitByHeight` (Direct Zero-Copy Height Splitting)
+Membagi sebuah `Bitmap` vertikal yang panjang (seperti strip manhwa/webtoon) secara horizontal (berdasarkan tinggi) menjadi beberapa objek `Bitmap` yang lebih kecil secara rata.
 
 ```kotlin
-external fun resizeBitmap(
-    srcBitmap: Bitmap,
-    dstBitmap: Bitmap,
-    algorithm: Int
-): Boolean
+fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>?
 ```
-* **Parameters:**
-  * `srcBitmap`: Objek `Bitmap` asal (harus memiliki konfigurasi `Bitmap.Config.ARGB_8888`).
-  * `dstBitmap`: Objek `Bitmap` tujuan (harus diinisialisasi terlebih dahulu dengan ukuran target dan konfigurasi `Bitmap.Config.ARGB_8888`).
-  * `algorithm`: Nilai integer dari algoritma interpolasi (0–4).
-* **Returns:** `Boolean` bernilai `true` jika berhasil, `false` jika gagal.
-
----
-
-#### 2. `splitByHeight` & `splitByWidth` (Direct Zero-Copy Splitting)
-
-* **`splitByHeight`**: Membagi sebuah `Bitmap` vertikal yang panjang (seperti strip manhwa/webtoon) secara horizontal (berdasarkan tinggi) menjadi beberapa objek `Bitmap` yang lebih kecil secara rata.
-  ```kotlin
-  fun splitByHeight(src: Bitmap, numParts: Int): Array<Bitmap>?
-  ```
-* **`splitByWidth`**: Membagi sebuah `Bitmap` lanskap yang lebar (seperti halaman ganda manga / double-spread) secara vertikal (berdasarkan lebar) menjadi beberapa objek `Bitmap` yang lebih kecil secara rata (misalnya menjadi halaman kiri dan kanan).
-  ```kotlin
-  fun splitByWidth(src: Bitmap, numParts: Int): Array<Bitmap>?
-  ```
 * **Parameters:**
   * `src`: Objek `Bitmap` asal yang ingin dipotong (harus menggunakan `Bitmap.Config.ARGB_8888`).
   * `numParts`: Jumlah potongan gambar yang diinginkan (harus > 0).
@@ -65,32 +43,29 @@ external fun resizeBitmap(
 
 ---
 
-#### 3. `resizeRgba` (Kopling Byte Array)
-Menerima array byte mentah gambar berformat RGBA dan mengembalikan gambar hasil resize dengan format yang sama.
+#### 2. `resizeByWidth` (Direct Aspect-Ratio Preserving Resize)
+Mengubah ukuran sebuah `Bitmap` berdasarkan lebar target yang ditentukan, secara otomatis menghitung tinggi untuk menjaga rasio aspek asli gambar.
 
 ```kotlin
-external fun resizeRgba(
-    src: ByteArray,
-    srcWidth: Int,
-    srcHeight: Int,
-    dstWidth: Int,
-    dstHeight: Int,
-    algorithm: Int
-): ByteArray?
+fun resizeByWidth(src: Bitmap, targetWidth: Int, alg: Algorithm): Bitmap?
 ```
+* **Parameters:**
+  * `src`: Objek `Bitmap` asal (harus memiliki konfigurasi `Bitmap.Config.ARGB_8888`).
+  * `targetWidth`: Lebar target gambar hasil resize.
+  * `alg`: Algoritma interpolasi (Gunakan `Algorithm.LANCZOS3` untuk manga/manhwa).
+* **Returns:** Objek `Bitmap` hasil resize (dengan rasio aspek tetap terjaga), atau `null` jika proses gagal.
 
 ---
 
 ## 3. Contoh Penggunaan (Kotlin)
 
-### Contoh A: Memotong Halaman / Strip Manga & Manhwa
-Berikut adalah cara memotong strip manhwa vertikal menjadi 4 bagian secara rata, serta membagi halaman ganda (double-page spread) manga menjadi 2 halaman tunggal.
+### Contoh A: Memotong Strip Manhwa Vertikal (`splitByHeight`)
+Membagi strip manhwa panjang menjadi 4 bagian secara vertikal secara native & cepat tanpa overhead memori JVM:
 
 ```kotlin
 import android.graphics.Bitmap
 import io.github.fastimage.FastImageResizer
 
-// Kasus 1: Membagi strip manhwa vertikal panjang menjadi 4 bagian secara rata
 fun sliceManhwaStrip(manhwaStrip: Bitmap): Array<Bitmap>? {
     val srcBitmap = if (manhwaStrip.config != Bitmap.Config.ARGB_8888) {
         manhwaStrip.copy(Bitmap.Config.ARGB_8888, false)
@@ -99,44 +74,30 @@ fun sliceManhwaStrip(manhwaStrip: Bitmap): Array<Bitmap>? {
     }
     return FastImageResizer.splitByHeight(srcBitmap, numParts = 4)
 }
-
-// Kasus 2: Membagi halaman ganda (double-spread) manga menjadi halaman kiri dan kanan
-fun splitMangaDoublePage(doublePage: Bitmap): Array<Bitmap>? {
-    val srcBitmap = if (doublePage.config != Bitmap.Config.ARGB_8888) {
-        doublePage.copy(Bitmap.Config.ARGB_8888, false)
-    } else {
-        doublePage
-    }
-    return FastImageResizer.splitByWidth(srcBitmap, numParts = 2)
-}
 ```
 
 ---
 
-### Contoh B: Mengubah Ukuran Android `Bitmap` (`resize`)
-Mengubah ukuran halaman manga sebelum ditampilkan ke UI agar rendering berjalan mulus.
+### Contoh B: Mengubah Ukuran Halaman Manga Berdasarkan Lebar (`resizeByWidth`)
+Mengubah lebar halaman manga (misalnya menjadi lebar layar ponsel targetWidth = 1080px) secara otomatis menyesuaikan tinggi agar gambar tidak gepeng:
 
 ```kotlin
 import android.graphics.Bitmap
 import io.github.fastimage.FastImageResizer
 
-fun resizeMangaPage(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap? {
+fun fitMangaPageToWidth(source: Bitmap, targetWidth: Int): Bitmap? {
     val srcBitmap = if (source.config != Bitmap.Config.ARGB_8888) {
         source.copy(Bitmap.Config.ARGB_8888, false)
     } else {
         source
     }
 
-    val dstBitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-
-    // Resize menggunakan Lanczos3 agar teks komik tetap tajam
-    val success = FastImageResizer.resize(
+    // Resize menggunakan Lanczos3 agar teks komik tetap tajam & rasio aspek terjaga
+    return FastImageResizer.resizeByWidth(
         src = srcBitmap,
-        dst = dstBitmap,
+        targetWidth = targetWidth,
         alg = FastImageResizer.Algorithm.LANCZOS3
     )
-
-    return if (success) dstBitmap else null
 }
 ```
 
